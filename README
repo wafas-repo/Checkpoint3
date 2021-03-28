@@ -1,0 +1,75 @@
+Wafa Qazi / Aqsa Pehlvi
+CIS*4650
+Checkpoint 2
+March 24, 2021
+
+===================
+PROGRAM DESCRIPTION
+===================
+
+For CheckpointTwo, the following was implemented: 
+      • Symbol Table that maintains all declarations within program
+      • Type checking validation for all types of operations within program 
+
+=========================
+BUILDING AND TESTING PLAN
+=========================
+
+This program uses both jflex and CUP as part of the application. These must be installed on
+your system for the build to be successful. These build instructions also assume that javac is
+a usable command on your computer, and that you are building on a Linux environment.
+
+Building
+-----------
+
+  Note that you need to modify the paths for CLASSPATH, JFLEX, and CUP in 
+the Makefile so that the related commands can be found on your particular 
+machine. 
+
+  To build the parser, type "make" in the current directory, which will 
+generate an executable program called "CM".
+
+  If youd like to produce a syntax-tree for the input file you will need to 
+  add a "-a" flag to the command line.
+
+  If youd like to produce the symbol table for the input file you will need to 
+  add a "-s" flag to the command line.
+
+  For example, to test source code like "fac.cm", type 
+
+    "java -cp java/java-cup-11b.jar:. CM -s -a testfiles/fac.cm " 
+
+  Sytax tree and symbol table output will be redirected to .sym and .abs files respectively.
+
+  To rebuild the parser, type "make clean" and type "make" again.
+
+  Also note that all the abstract syntax tree structures are defined under
+the directory "absyn" and the methods for showing a syntax tree is implemented
+by the visitor pattern in "ShowTreeVisitor.java".  Since some java files are 
+generated automatically, they may contain variables that are not used, which 
+are safe to ignore in the compilation process.
+
+
+Testing 
+-----------
+
+  This parser is meant to take C- programs as input files. We have provided
+  [12345].cm files to test with, however any C- program files will work. 
+
+===========================
+ASSUMPTIONS AND LIMITATIONS
+===========================
+
+ 1. Assume testing will be with errors of scope relaated to assignment
+ 2. This program will work with any files of C- spec
+ 3. We have follwed the reccomended examples of declaration and type-checking errors and have done 
+    recovery for all provided. Only limitation is the number of parameters in a function. Our program
+    doesnt recognize mismatch between function dec and call.
+
+====================
+FURTHER IMPROVEMENTS
+====================
+
+1. We could improve on our code structure and handle the symbol table more efficiently 
+2. More in depth type checking could be done for the funtion parameters 
+
