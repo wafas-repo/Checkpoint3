@@ -310,7 +310,20 @@ public class SemanticAnalyzer implements AbsynVisitor {
   }
 
   @Override
-  public void visit(DecList exp, int level) {
+  public void visit(DecList exp, int level) { 
+
+    NameTy typeInput = new NameTy(exp.pos, 0);
+    NameTy typeOutput = new NameTy(exp.pos, 1);
+    NodeType input = new NodeType("input", typeInput, level, "1");
+    NodeType output = new NodeType("output", typeOutput, level, "0");
+    if (table.get("input") == null) {
+      table.put("input", new ArrayList<NodeType>());
+    }
+    if (table.get("output") == null) {
+      table.put("output", new ArrayList<NodeType>());
+    }
+    table.get("input").add(0, input);
+    table.get("output").add(0, output);
     System.out.println("Entering global scope: ");
      while( exp != null ) {
       exp.head.accept( this, level );
@@ -340,7 +353,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
                   System.out.print("void ");
             }
             System.out.print(") -> ");
-          }
+          } 
             if (node.level == level) {
               if(node.type.typ == 1) {
                 System.out.println("void");
