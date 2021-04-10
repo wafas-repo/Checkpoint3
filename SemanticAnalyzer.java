@@ -28,62 +28,62 @@ public class SemanticAnalyzer implements AbsynVisitor {
     for( int i = 0; i < level * SPACES; i++ ) System.out.print( " " );
   }
   
-  public void visit( ExpList expList, int level ) {
+  public void visit( ExpList expList, int level, boolean isAddr ) {
     while( expList != null ) {
       if (expList.head != null){
-        expList.head.accept( this, level );
+        expList.head.accept( this, level, false );
         expList = expList.tail;
       }  
     } 
   }
 
-  public void visit( IntExp exp, int level ) {
+  public void visit( IntExp exp, int level, boolean isAddr ) {
 
   }
 
   @Override
-  public void visit(NilExp exp, int level) {
+  public void visit(NilExp exp, int level, boolean isAddr) {
 
     
   }
 
   @Override
-  public void visit(NameTy exp, int level) {
+  public void visit(NameTy exp, int level, boolean isAddr) {
   
   }
 
   @Override
-  public void visit(CompoundExp exp, int level) {
+  public void visit(CompoundExp exp, int level, boolean isAddr) {
      VarDecList dec = exp.decs;
      while( dec != null ) {
       if(dec.head != null) {
-        dec.head.accept( this, level );
+        dec.head.accept( this, level, false );
       }
         dec = dec.tail;
      } 
      ExpList ex = exp.exps;
      while( ex != null ) {
         if(ex.head != null) {
-          ex.head.accept( this, level );
+          ex.head.accept( this, level, false );
         }
         ex = ex.tail;
      } 
   }
 
   @Override
-  public void visit(VarDecList exp, int level) {
+  public void visit(VarDecList exp, int level, boolean isAddr) {
       while( exp != null ) {
         if (exp.head != null) {
-          exp.head.accept( this, level );
+          exp.head.accept( this, level, false );
           exp = exp.tail;
         }
       } 
   }
 
 
-  public void visit( AssignExp exp, int level ) {
-    exp.lhs.accept( this, level );
-    exp.rhs.accept( this, level );
+  public void visit( AssignExp exp, int level, boolean isAddr ) {
+    exp.lhs.accept( this, level, false );
+    exp.rhs.accept( this, level, false );
     String var = "";
     if (exp.rhs instanceof CallExp) {
       var = ((CallExp) exp.rhs).func;
@@ -95,9 +95,9 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
   }
 
-  public void visit( OpExp exp, int level ) {
-    exp.left.accept( this, level );
-    exp.right.accept( this, level );
+  public void visit( OpExp exp, int level, boolean isAddr ) {
+    exp.left.accept( this, level, false );
+    exp.right.accept( this, level, false );
     String var = "";
     if (exp.left instanceof CallExp) {
       var = ((CallExp) exp.left).func;
@@ -110,14 +110,14 @@ public class SemanticAnalyzer implements AbsynVisitor {
     }
   }
 
-  public void visit( VarExp exp, int level ) {
-    exp.variable.accept(this, level);
+  public void visit( VarExp exp, int level, boolean isAddr ) {
+    exp.variable.accept(this, level, false);
 
   }
 
   
   @Override
-  public void visit(SimpleVar exp, int level) {
+  public void visit(SimpleVar exp, int level, boolean isAddr) {
     
     if (findSymbol(exp.name)) {
       if (!isInt(exp.name))
@@ -130,14 +130,14 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
   
   @Override
-  public void visit(ReturnExp exp, int level) {
+  public void visit(ReturnExp exp, int level, boolean isAddr) {
    
     if (exp.exp instanceof NilExp) {
       if (isInt(currFunc)) {
         System.err.printf("line %d: error: incompatible types: missing return value\n", exp.pos+1);
       }
     } else {
-      exp.exp.accept(this, level);
+      exp.exp.accept(this, level, false);
       if (!isInt(currFunc)) {
         if (!(exp.exp instanceof NilExp)) {
           System.err.printf("line %d: error: incompatible types: unexpected return value\n", exp.pos+1);
@@ -147,8 +147,8 @@ public class SemanticAnalyzer implements AbsynVisitor {
   }
 
   @Override
-  public void visit(IndexVar exp, int level) {
-    exp.index.accept(this, level);
+  public void visit(IndexVar exp, int level, boolean isAddr) {
+    exp.index.accept(this, level, false);
     String var = "";
     if (exp.index instanceof CallExp) var = ((CallExp) exp.index).func;
     else if (((VarExp) exp.index).variable instanceof SimpleVar) var = ((SimpleVar) ((VarExp) exp.index).variable).name;
@@ -160,14 +160,13 @@ public class SemanticAnalyzer implements AbsynVisitor {
     } else {
       System.err.printf("line %d: error: cannot find symbol %s\n", exp.pos+1, exp.name);
     }
-
   }
 
   @Override
-  public void visit(CallExp exp, int level) {
+  public void visit(CallExp exp, int level, boolean isAddr) {
     ExpList ex = exp.args;
     while( ex != null ) {
-      ex.head.accept( this, level );
+      ex.head.accept( this, level, false );
       ex = ex.tail;
     } 
 
@@ -178,12 +177,12 @@ public class SemanticAnalyzer implements AbsynVisitor {
   }
 
   @Override
-  public void visit(WhileExp exp, int level) {
+  public void visit(WhileExp exp, int level, boolean isAddr) {
     level++;
     indent(level);
     System.out.println("Entering a new while block: ");
-    exp.test.accept( this, level );
-    exp.body.accept( this, level ); 
+    exp.test.accept( this, level, false );
+    exp.body.accept( this, level, false ); 
 
     printMap(level);
     delete(level);
@@ -195,17 +194,14 @@ public class SemanticAnalyzer implements AbsynVisitor {
       if (!isInt(var)) 
         System.err.printf("line %d: error: Test expression %s is not an integer.\n", exp.pos+1, var);
     }
-
-
-
   }
   
-  public void visit( IfExp exp, int level ) {
+  public void visit( IfExp exp, int level, boolean isAddr ) {
     level++;
     indent( level );
     System.out.println("Entering a new if block: ");
-    exp.test.accept( this, level );
-    exp.thenpart.accept( this, level );
+    exp.test.accept( this, level, false );
+    exp.thenpart.accept( this, level, false );
     String var = "";
     printMap(level);
     delete(level);
@@ -215,7 +211,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
     if (exp.elsepart != null ) {
       indent(level);
       System.out.println("Entering a new else block: ");
-      exp.elsepart.accept( this, level );
+      exp.elsepart.accept( this, level, false );
       printMap(level);
       delete(level);
       indent(level);
@@ -234,7 +230,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
   }
   
   @Override
-  public void visit(FunctionDec exp, int level) {
+  public void visit(FunctionDec exp, int level, boolean isAddr) {
     NodeType entry = new NodeType(exp.func, exp.result, level, "");
     if (!varExistsInCurrentScope(exp.func, level)){
       level++;
@@ -244,7 +240,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
       VarDecList ex = exp.params;
       tempParams = "";
       while( ex != null ) {
-        ex.head.accept( this, level );
+        ex.head.accept( this, level, false );
         ex = ex.tail;
       }
       entry.params = tempParams;
@@ -254,7 +250,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
       }
       
       table.get(exp.func).add(0, entry);
-      exp.body.accept(this, level);
+      exp.body.accept(this, level, false);
       printMap(level);
       delete(level);
       indent(level);
@@ -270,7 +266,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
   }
 
   @Override
-  public void visit(SimpleDec exp, int level) {
+  public void visit(SimpleDec exp, int level, boolean isAddr) {
 
     boolean err;
     err = insert(exp.name, level, exp.typ);
@@ -282,7 +278,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
   }
 
   @Override
-  public void visit(ArrayDec exp, int level) {
+  public void visit(ArrayDec exp, int level, boolean isAddr) {
     String name = "";
     name = exp.name + "[";
     if (exp.size != null)
@@ -310,7 +306,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
   }
 
   @Override
-  public void visit(DecList exp, int level) { 
+  public void visit(DecList exp, int level, boolean isAddr) { 
 
     NameTy typeInput = new NameTy(exp.pos, 0);
     NameTy typeOutput = new NameTy(exp.pos, 1);
@@ -326,7 +322,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
     table.get("output").add(0, output);
     System.out.println("Entering global scope: ");
      while( exp != null ) {
-      exp.head.accept( this, level );
+      exp.head.accept( this, level, false );
       exp = exp.tail;
     }
     printMap(level);

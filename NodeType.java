@@ -5,6 +5,8 @@ public class NodeType {
     NameTy type;
     public int level;
     public String params;
+    public int address;
+    public int nestLevel;
 
     public NodeType(String name, NameTy type, int level, String params) {
         this.name = name;
@@ -17,6 +19,14 @@ public class NodeType {
         this.name = name2;
         this.level = level2;
     }
+
+    public NodeType(String name3, int address, int nestLevel) {
+        this.name = name3;
+        this.address = address;
+        this.nestLevel = nestLevel;
+    }
+
+
 
     @Override
     public boolean equals(Object obj) {
@@ -35,7 +45,9 @@ public class NodeType {
     }
     @Override
     public int hashCode() {
-        return 31*name.hashCode()+type.hashCode()+level;
+        return 31*name.hashCode()+level;
+        // took this out check if effects semanticanalyzer
+       // return 31*name.hashCode()+type.hashCode()+level;
     }
     
 }

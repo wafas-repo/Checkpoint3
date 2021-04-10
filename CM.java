@@ -17,8 +17,10 @@ import absyn.*;
 class CM {
   public static boolean SHOW_TREE = false;
   public static boolean SHOW_TABLE = false;
+  public static boolean CODE_GEN = false;
   public static final String EXT_ABS_STRING = ".abs";
   public static final String EXT_SYM_STRING = ".sym";
+  public static final String EXT_TM_STRING = ".tm";
 
   static public void main(String argv[]) {    
     /* Start the parser */
@@ -31,8 +33,9 @@ class CM {
           SHOW_TREE = true;
         } else if (argv[i].equals("-s")){
           SHOW_TABLE = true;
-        }
-        else if (argv[i].endsWith(".cm")) {
+        } else if (argv[i].equals("-c")){
+          CODE_GEN = true;
+        } else if (argv[i].endsWith(".cm")) {
           file = argv[i];
         }
     }
@@ -49,7 +52,7 @@ class CM {
         System.setOut(o);  
         System.out.println("The abstract syntax tree is:");
         ShowTreeVisitor visitor = new ShowTreeVisitor();
-        result.accept(visitor, 0);
+        result.accept(visitor, 0, false);
       }
       if (SHOW_TABLE) {
         String output_file = file + EXT_SYM_STRING; 
@@ -57,7 +60,20 @@ class CM {
         PrintStream console = System.out;  
         System.setOut(o);  
         SemanticAnalyzer analyzer = new SemanticAnalyzer();
-        result.accept(analyzer, 0);
+        result.accept(analyzer, 0, false);
+      }
+
+      if (CODE_GEN) {
+        String output_file = file + EXT_TM_STRING;
+        PrintStream o = new PrintStream(new File(output_file));
+        PrintStream console = System.out;
+        System.setOut(o);
+       // CodeGenerator.prelude(output_file);
+        CodeGenerator generator = new CodeGenerator();
+        generator.visit((DecList) result);
+        //result.accept(generator, 0, false);
+       // CodeGenerator.finale();
+
       }
 
 

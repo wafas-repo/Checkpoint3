@@ -129,9 +129,9 @@ dec_list      ::= dec_list:dec var_dec:vd
                 ; 
 
 var_dec       ::= type_specifier:t ID:i SEMI
-                 {:RESULT = new SimpleDec(tleft, t, i); :}
+                 {:RESULT = new SimpleDec(tleft, t, i, 0); :}
                 | type_specifier:t ID:i LBRACK NUM:n RBRACK SEMI
-                 {:RESULT = new ArrayDec(tleft, t, i, new IntExp(nleft, nright, n)); :}
+                 {:RESULT = new ArrayDec(tleft, t, i, new IntExp(nleft, nright, n), 0); :}
                 | error:e ID:i SEMI
                   {: parser.report_error("Invalid syntax in variable declaration", e);
                    RESULT = null; :}  
@@ -172,9 +172,9 @@ param_list     ::= param_list:pl COMMA param:p
                  ;
 
 param          ::= type_specifier:t ID:i
-                   {: RESULT = new SimpleDec(tleft, t, i); :}
+                   {: RESULT = new SimpleDec(tleft, t, i, 0); :}
                  | type_specifier:t ID:i LBRACK RBRACK
-                   {: RESULT = new ArrayDec(tleft, t, i, null); :}
+                   {: RESULT = new ArrayDec(tleft, t, i, null, 0); :}
                  ;
 
 comp_stmt     ::= LBRACE:l loc_dec:d  stmt_list:s RBRACE

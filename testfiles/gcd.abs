@@ -1,0 +1,46 @@
+The abstract syntax tree is:
+SimpleDec: ID: y NameTy: INT
+ArrayDec: ID: x Size: 5 NameTy: INT
+FunctionDec: ID: gcd NameTy: INT
+    SimpleDec: ID: u NameTy: INT
+    SimpleDec: ID: v NameTy: INT
+    CompoundExp: 
+        IfExp:
+            OpExp: == 
+                VarExp: 
+                    SimpleVar: v
+                IntExp: 0
+            ReturnExp: 
+                VarExp: 
+                    SimpleVar: u
+            ReturnExp: 
+                CallExp: gcd
+                    VarExp: 
+                        SimpleVar: v
+                    OpExp: - 
+                        VarExp: 
+                            SimpleVar: u
+                        OpExp: * 
+                            OpExp: / 
+                                VarExp: 
+                                    SimpleVar: u
+                                VarExp: 
+                                    SimpleVar: v
+                            VarExp: 
+                                SimpleVar: v
+FunctionDec: ID: main NameTy: VOID
+    CompoundExp: 
+        SimpleDec: ID: x NameTy: INT
+        SimpleDec: ID: y NameTy: INT
+        AssignExp:
+            SimpleVar: x
+            CallExp: input
+        AssignExp:
+            SimpleVar: y
+            CallExp: input
+        CallExp: output
+            CallExp: gcd
+                VarExp: 
+                    SimpleVar: x
+                VarExp: 
+                    SimpleVar: y
