@@ -78,6 +78,17 @@ public class CodeGenerator implements AbsynVisitor {
 
     @Override
     public void visit(DecList exp, int offset, boolean isAddr) {
+        NodeType output = new NodeType("output", 7, 1);
+        if (table.get("output") == null) {
+            table.put("output", new ArrayList<NodeType>());
+        } 
+        table.get("output").add(output);
+
+        NodeType input = new NodeType("input", 4, 1);
+        if (table.get("input") == null) {
+            table.put("input", new ArrayList<NodeType>());
+        } 
+        table.get("input").add(input);
         while( exp != null ) {
             if (exp.head instanceof VarDec){
                 VarDec var = (VarDec) exp.head;
@@ -129,6 +140,8 @@ public class CodeGenerator implements AbsynVisitor {
            // exp.lhs.accept( this, offset-1, true);
             emitComment("<- id"); 
             emitRM("ST", ac, offset, fp, "op: push left AssignExp");
+        } else if(exp.lhs instanceof IndexVar) {
+            visit((IndexVar)exp.lhs, offset-1, false);
         }
 
         if (exp.rhs instanceof OpExp)
@@ -139,6 +152,14 @@ public class CodeGenerator implements AbsynVisitor {
             //System.err.println(offset-2);
             visit((IntExp)exp.rhs, offset-2, false);
       
+        } else if(exp.rhs instanceof CallExp) {
+
+            visit((CallExp)exp.rhs, offset-2, false);
+
+        } else if(exp.rhs instanceof OpExp) {
+
+            visit((OpExp)exp.rhs, offset-2, false);
+
         }
 
         emitRM("LD", 1, offset, fp, "op: load left");
@@ -170,10 +191,25 @@ public class CodeGenerator implements AbsynVisitor {
     }
 
     @Override
+    public void visit(IndexVar exp, int offset, boolean isAddr) {
+        emitComment("-> subs");
+        int x = getAddress(exp.name);
+        emitRM("LD", ac, x, fp, "load id value");
+        emitRM("ST", ac, offset--, fp, "store array addr");
+        exp.index.accept(this, offset, false);
+        emitComment("<- subs");
+    }
+
+    @Override
     public void visit(IfExp exp, int offset, boolean isAddr) {
         emitComment("-> if");
         exp.test.accept( this, offset, false );
+        int savedLoc = emitSkip(1);
         exp.thenpart.accept( this, offset, false );
+        int savedLoc2 = emitSkip(0);
+        emitBackup(savedLoc);
+        emitRM_Abs("JEQ", 0, savedLoc2, "if: jump to else part");
+        emitRestore();
         if (exp.elsepart != null ) {
            emitComment("if: jump to else belongs here");
            exp.elsepart.accept( this, offset, false );
@@ -293,6 +329,9 @@ public class CodeGenerator implements AbsynVisitor {
             //exp.variable.accept(this, offset, false);
             visit((SimpleVar)exp.variable, offset, false);
 
+        } else if (exp.variable instanceof IndexVar) {
+
+            visit((IndexVar)exp.variable, offset, false);
         }
 
     }
@@ -305,12 +344,24 @@ public class CodeGenerator implements AbsynVisitor {
 
     @Override
     public void visit(CallExp exp, int offset, boolean isAddr) {
+        int i = -2;
         emitComment("-> call of function: " + exp.func);
+        int x = getAddress(exp.func);
+        System.err.println(x);
         ExpList ex = exp.args;
         while( ex != null ) {
-            ex.head.accept( this, offset, false );
+            if (exp.args.head != null){
+                ex.head.accept( this, offset, false );
+                emitRM("ST", ac, offset+i, fp, "op: push left INT");
+                i--;
+              }
             ex = ex.tail;
         }
+        emitRM("ST", fp, offset, fp, "push ofp");
+        emitRM("LDA", fp, offset, fp, "Push frame");
+        emitRM("LDA", 0, 1, pc, "Load ac with ret ptr");
+        emitRM_Abs("LDA", pc, x, "jump to fun loc");
+        emitRM("LD", fp, 0, fp, "Pop frame");
         emitComment("<- call");
     }
 
@@ -318,8 +369,15 @@ public class CodeGenerator implements AbsynVisitor {
     public void visit(WhileExp exp, int offset, boolean isAddr) {
         emitComment("-> while");
         emitComment("while: jump after body comes back here");
+        int savedLoc3 = emitSkip(0);
         exp.test.accept( this, offset, false );
+        int savedLoc = emitSkip(1);
         exp.body.accept( this, offset, false ); 
+        emitRM_Abs("LDA", pc, savedLoc3, "While: absolute jmp to test");
+        int savedLoc2 = emitSkip(0);
+        emitBackup(savedLoc);
+        emitRM_Abs("JEQ", 0, savedLoc2, "While: jmp to end");
+        emitRestore();
         emitComment("<- while");
     }
 
@@ -357,13 +415,15 @@ public class CodeGenerator implements AbsynVisitor {
     }
 
     @Override
-    public void visit(IndexVar exp, int offset, boolean isAddr) {
-        exp.index.accept(this, offset, false);
-    }
-
-    @Override
     public void visit(FunctionDec exp, int offset, boolean isAddr) {
         offset = 0;
+        NodeType entry = new NodeType(exp.func, emitLoc, 1);
+        if (table.get(exp.func) == null) {
+            table.put(exp.func, new ArrayList<NodeType>());
+        } 
+        table.get(exp.func).add(entry);
+        int x = getAddress(exp.func);
+        System.err.println(exp.func + ": address: " + x);
         emitComment("Processing function: " + exp.func);
         emitComment("jump around function body here");
         int savedLoc = emitSkip(1);
@@ -373,7 +433,13 @@ public class CodeGenerator implements AbsynVisitor {
         exp.result.accept(this, offset, false);
         VarDecList ex = exp.params;
         while( ex != null ) {
-          ex.head.accept( this, offset, false);
+          //ex.head.accept( this, --offset, false);
+          if (ex.head instanceof SimpleDec){
+            visit((SimpleDec)ex.head, --offset, true);
+          } else if (ex.head instanceof ArrayDec) {
+            visit((ArrayDec)ex.head, --offset, true);
+          }
+         
           ex = ex.tail;
         } 
         //System.err.println(offset);
@@ -387,24 +453,53 @@ public class CodeGenerator implements AbsynVisitor {
     }
 
     @Override
-    public void visit(SimpleDec exp, int offset, boolean isAddr) {
+    public void visit(SimpleDec exp, int offset, boolean isParameter) {
 
-        //System.err.println("here" + offset);
-        NodeType entry = new NodeType(exp.name, offset, 1);
-        if (table.get(exp.name) == null) {
-            table.put(exp.name, new ArrayList<NodeType>());
-        } 
-        table.get(exp.name).add(entry);
-        //System.err.println(table);
-        emitComment("processing local var: " + exp.name);
-        exp.typ.accept( this, offset, false);
+        if (isParameter == true) {
+            System.err.println(exp.name + " isparameter");
+             //System.err.println("here" + offset);
+            NodeType entry = new NodeType(exp.name, offset, 1);
+            if (table.get(exp.name) == null) {
+                table.put(exp.name, new ArrayList<NodeType>());
+            } 
+            table.get(exp.name).add(entry);
+        } else {
+
+                //System.err.println("here" + offset);
+            NodeType entry = new NodeType(exp.name, offset, 1);
+            if (table.get(exp.name) == null) {
+                table.put(exp.name, new ArrayList<NodeType>());
+            } 
+            table.get(exp.name).add(entry);
+            //System.err.println(table);
+            emitComment("processing local var: " + exp.name);
+            exp.typ.accept( this, offset, false);
+
+        }
 
     }
 
     @Override
-    public void visit(ArrayDec exp, int offset, boolean isAddr) {
+    public void visit(ArrayDec exp, int offset, boolean isParameter) {
 
-        emitComment("processing local var: " + exp.name);
+        if (isParameter == true) {
+            System.err.println(exp.name + " isparameter");
+            NodeType entry = new NodeType(exp.name, offset, 1);
+            if (table.get(exp.name) == null) {
+                table.put(exp.name, new ArrayList<NodeType>());
+            } 
+            table.get(exp.name).add(entry);
+        } else {
+
+            NodeType entry = new NodeType(exp.name, offset, 1);
+            if (table.get(exp.name) == null) {
+                table.put(exp.name, new ArrayList<NodeType>());
+            } 
+            table.get(exp.name).add(entry);
+            //System.err.println(table);
+            emitComment("processing local var: " + exp.name);
+
+        }
 
         if (exp.size != null) {
         } 

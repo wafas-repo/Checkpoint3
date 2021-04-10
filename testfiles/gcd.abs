@@ -1,9 +1,5 @@
 The abstract syntax tree is:
-SimpleDec: ID: y NameTy: INT
-ArrayDec: ID: x Size: 5 NameTy: INT
 FunctionDec: ID: gcd NameTy: INT
-    SimpleDec: ID: u NameTy: INT
-    SimpleDec: ID: v NameTy: INT
     CompoundExp: 
         IfExp:
             OpExp: == 
