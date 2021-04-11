@@ -20,10 +20,11 @@ public class NodeType {
         this.level = level2;
     }
 
-    public NodeType(String name3, int address, int nestLevel) {
+    public NodeType(String name3, int address, int nestLevel, int level) {
         this.name = name3;
         this.address = address;
         this.nestLevel = nestLevel;
+        this.level = level;
     }
 
 

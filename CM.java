@@ -52,7 +52,7 @@ class CM {
         System.setOut(o);  
         System.out.println("The abstract syntax tree is:");
         ShowTreeVisitor visitor = new ShowTreeVisitor();
-        result.accept(visitor, 0, false);
+        result.accept(visitor, 0, false, 0);
       }
       if (SHOW_TABLE) {
         String output_file = file + EXT_SYM_STRING; 
@@ -60,7 +60,7 @@ class CM {
         PrintStream console = System.out;  
         System.setOut(o);  
         SemanticAnalyzer analyzer = new SemanticAnalyzer();
-        result.accept(analyzer, 0, false);
+        result.accept(analyzer, 0, false, 0);
       }
 
       if (CODE_GEN) {

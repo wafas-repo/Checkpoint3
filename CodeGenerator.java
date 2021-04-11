@@ -1,6 +1,7 @@
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map.Entry;
 
 import absyn.*;
@@ -60,7 +61,8 @@ public class CodeGenerator implements AbsynVisitor {
         emitRestore();
     
 
-        visit(decs, 0 , false);
+        visit(decs, 0 , false, 0);
+        System.err.println(table);
 
         // check if main is 0 terminate
 
@@ -77,14 +79,16 @@ public class CodeGenerator implements AbsynVisitor {
 
 
     @Override
-    public void visit(DecList exp, int offset, boolean isAddr) {
-        NodeType output = new NodeType("output", 7, 1);
+    public void visit(DecList exp, int offset, boolean isAddr, int level) {
+        System.err.println("Global: " + level);
+        
+        NodeType output = new NodeType("output", 7, 1, level);
         if (table.get("output") == null) {
             table.put("output", new ArrayList<NodeType>());
         } 
         table.get("output").add(output);
 
-        NodeType input = new NodeType("input", 4, 1);
+        NodeType input = new NodeType("input", 4, 1, level);
         if (table.get("input") == null) {
             table.put("input", new ArrayList<NodeType>());
         } 
@@ -94,7 +98,7 @@ public class CodeGenerator implements AbsynVisitor {
                 VarDec var = (VarDec) exp.head;
                 if (var instanceof SimpleDec){
                     SimpleDec sVar = (SimpleDec)var;
-                    NodeType entry = new NodeType(sVar.name, globalOffset, 0);
+                    NodeType entry = new NodeType(sVar.name, globalOffset, 0, level);
                     if (table.get(sVar.name) == null) {
                         table.put(sVar.name, new ArrayList<NodeType>());
                     } 
@@ -104,7 +108,7 @@ public class CodeGenerator implements AbsynVisitor {
                     globalOffset--;
                 } else if (var instanceof ArrayDec) {
                     ArrayDec aVar = (ArrayDec)var;
-                    NodeType entry = new NodeType(aVar.name, globalOffset, 0);
+                    NodeType entry = new NodeType(aVar.name, globalOffset, 0, level);
                     if (table.get(aVar.name) == null) {
                         table.put(aVar.name, new ArrayList<NodeType>());
                     } 
@@ -114,7 +118,8 @@ public class CodeGenerator implements AbsynVisitor {
                     globalOffset = globalOffset - Integer.parseInt(aVar.size.value);
                 }
             } 
-            exp.head.accept( this, offset, isAddr);
+            exp.head.accept( this, offset, isAddr, level);
+            //delete(level);
             exp = exp.tail;
           } 
         
@@ -122,44 +127,47 @@ public class CodeGenerator implements AbsynVisitor {
 
 
     @Override
-    public void visit(ExpList expList, int offset, boolean isAddr) {
+    public void visit(ExpList expList, int offset, boolean isAddr, int level) {
         while( expList != null ) {
             if (expList.head != null){
-              expList.head.accept( this, offset, false );
+              expList.head.accept( this, offset, false, level );
               expList = expList.tail;
             }  
         }    
     }
 
     @Override
-    public void visit(AssignExp exp, int offset, boolean isAddr) {
-        System.err.println(offset + "assign");
+    public void visit(AssignExp exp, int offset, boolean isAddr, int level) {
+        //.println(offset + "assign");
         emitComment("-> op");
         if(exp.lhs instanceof SimpleVar){
-            visit((SimpleVar)exp.lhs, offset-1, true);
+            visit((SimpleVar)exp.lhs, offset-1, true, level);
            // exp.lhs.accept( this, offset-1, true);
             emitComment("<- id"); 
             emitRM("ST", ac, offset, fp, "op: push left AssignExp");
         } else if(exp.lhs instanceof IndexVar) {
-            visit((IndexVar)exp.lhs, offset-1, false);
+            visit((IndexVar)exp.lhs, offset-1, false, level);
         }
 
         if (exp.rhs instanceof OpExp)
         {
-            visit((OpExp)exp.rhs, offset-2, false);
+            visit((OpExp)exp.rhs, offset-2, false, level);
             //exp.rhs.accept( this, offset-2 , false);
         }else if(exp.rhs instanceof IntExp){
             //System.err.println(offset-2);
-            visit((IntExp)exp.rhs, offset-2, false);
+            visit((IntExp)exp.rhs, offset-2, false, level);
       
         } else if(exp.rhs instanceof CallExp) {
 
-            visit((CallExp)exp.rhs, offset-2, false);
+            visit((CallExp)exp.rhs, offset-2, false, level);
 
         } else if(exp.rhs instanceof OpExp) {
 
-            visit((OpExp)exp.rhs, offset-2, false);
+            visit((OpExp)exp.rhs, offset-2, false, level);
 
+        } else if (exp.rhs instanceof VarExp) {
+
+            visit((VarExp)exp.rhs, offset-2, false, level);
         }
 
         emitRM("LD", 1, offset, fp, "op: load left");
@@ -168,7 +176,7 @@ public class CodeGenerator implements AbsynVisitor {
     }
 
     @Override
-    public void visit(SimpleVar exp, int offset, boolean isAddr) {
+    public void visit(SimpleVar exp, int offset, boolean isAddr, int level) {
 
         //check if nest level is 0 -- use gp else use fp
         //System.err.println("hmm" + exp.name);
@@ -178,47 +186,52 @@ public class CodeGenerator implements AbsynVisitor {
         int x = getAddress(exp.name);
         //System.err.println("hmm" + exp.name + x);
         if(isAddr == true) {
-            System.err.println(offset + " simplevar is address: " + exp.name);
+            //System.err.println(offset + " simplevar is address: " + exp.name);
      
             emitRM("LDA", 0, x, fp, "load id address");
             //emitRM("ST", ac, offset, fp, "op: push left");
             //System.err.println(exp.name + " address : " + x);
         } else {
-            System.err.println(offset + " simplevar is not: " + exp.name);
+            //System.err.println(offset + " simplevar is not: " + exp.name);
             emitRM("LD", 0, x, fp, "load id value");
         }
         
     }
 
     @Override
-    public void visit(IndexVar exp, int offset, boolean isAddr) {
+    public void visit(IndexVar exp, int offset, boolean isAddr, int level) {
         emitComment("-> subs");
         int x = getAddress(exp.name);
         emitRM("LD", ac, x, fp, "load id value");
         emitRM("ST", ac, offset--, fp, "store array addr");
-        exp.index.accept(this, offset, false);
+        exp.index.accept(this, offset, false, level);
         emitComment("<- subs");
     }
 
     @Override
-    public void visit(IfExp exp, int offset, boolean isAddr) {
+    public void visit(IfExp exp, int offset, boolean isAddr, int level) {
+        level++;
+        System.err.println("If: " + level);
         emitComment("-> if");
-        exp.test.accept( this, offset, false );
+        exp.test.accept( this, offset, false, level );
         int savedLoc = emitSkip(1);
-        exp.thenpart.accept( this, offset, false );
+        exp.thenpart.accept( this, offset, false, level );
         int savedLoc2 = emitSkip(0);
         emitBackup(savedLoc);
         emitRM_Abs("JEQ", 0, savedLoc2, "if: jump to else part");
         emitRestore();
+        delete(level);
         if (exp.elsepart != null ) {
            emitComment("if: jump to else belongs here");
-           exp.elsepart.accept( this, offset, false );
+           exp.elsepart.accept( this, offset, false, level );
+           delete(level);
         }
         emitComment("<- if");
+        System.err.println("If end: " + level);
     }
 
     @Override
-    public void visit(IntExp exp, int offset, boolean isAddr) {
+    public void visit(IntExp exp, int offset, boolean isAddr, int level) {
         emitComment("-> constant");
         emitRM("LDC", ac, Integer.parseInt(exp.value), 0, "load const");
         emitComment("<- constant");
@@ -226,7 +239,7 @@ public class CodeGenerator implements AbsynVisitor {
     }
 
     @Override
-    public void visit(OpExp exp, int offset, boolean isAddr) {
+    public void visit(OpExp exp, int offset, boolean isAddr, int level) {
         // System.err.println(offset);
          emitComment("-> op");
         // visit((VarExp)exp.left, offset-1, false);
@@ -235,22 +248,22 @@ public class CodeGenerator implements AbsynVisitor {
 
         if(exp.left instanceof IntExp){
 
-            visit((IntExp)exp.left, offset-1, false);
+            visit((IntExp)exp.left, offset-1, false, level);
             emitRM("ST", ac, offset--, fp, "op: push left OP1");
 
         } else if(exp.left instanceof VarExp){
             
-            visit((VarExp)exp.left, offset-1, false);
+            visit((VarExp)exp.left, offset-1, false, level);
             emitRM("ST", ac, offset--, fp, "op: push left OP2");
         } 
       
         if(exp.right instanceof IntExp){
 
-            visit((IntExp)exp.right, offset-2, false);
+            visit((IntExp)exp.right, offset-2, false, level);
       
         } else if(exp.right instanceof VarExp){
 
-            visit((VarExp)exp.right, offset-2, false);
+            visit((VarExp)exp.right, offset-2, false, level);
         }
 
         emitRM("LD", 1, ++offset, fp, "op: load left");
@@ -322,36 +335,36 @@ public class CodeGenerator implements AbsynVisitor {
     }
 
     @Override
-    public void visit(VarExp exp, int offset, boolean isAddr) {
+    public void visit(VarExp exp, int offset, boolean isAddr, int level) {
 
         if (exp.variable instanceof SimpleVar) {
             //System.err.println("true");
             //exp.variable.accept(this, offset, false);
-            visit((SimpleVar)exp.variable, offset, false);
+            visit((SimpleVar)exp.variable, offset, false, level);
 
         } else if (exp.variable instanceof IndexVar) {
 
-            visit((IndexVar)exp.variable, offset, false);
+            visit((IndexVar)exp.variable, offset, false, level);
         }
 
     }
 
     @Override
-    public void visit(NilExp exp, int offset, boolean isAddr) {
+    public void visit(NilExp exp, int offset, boolean isAddr, int level) {
         // TODO Auto-generated method stub
         
     }
 
     @Override
-    public void visit(CallExp exp, int offset, boolean isAddr) {
+    public void visit(CallExp exp, int offset, boolean isAddr, int level) {
         int i = -2;
         emitComment("-> call of function: " + exp.func);
         int x = getAddress(exp.func);
-        System.err.println(x);
+       // System.err.println(x);
         ExpList ex = exp.args;
         while( ex != null ) {
             if (exp.args.head != null){
-                ex.head.accept( this, offset, false );
+                ex.head.accept( this, offset, false, level);
                 emitRM("ST", ac, offset+i, fp, "op: push left INT");
                 i--;
               }
@@ -366,42 +379,47 @@ public class CodeGenerator implements AbsynVisitor {
     }
 
     @Override
-    public void visit(WhileExp exp, int offset, boolean isAddr) {
+    public void visit(WhileExp exp, int offset, boolean isAddr, int level) {
+        level++;
+        System.err.println("While: " + level);
         emitComment("-> while");
         emitComment("while: jump after body comes back here");
         int savedLoc3 = emitSkip(0);
-        exp.test.accept( this, offset, false );
+        exp.test.accept( this, offset, false, level );
         int savedLoc = emitSkip(1);
-        exp.body.accept( this, offset, false ); 
+        exp.body.accept( this, offset, false, level ); 
         emitRM_Abs("LDA", pc, savedLoc3, "While: absolute jmp to test");
         int savedLoc2 = emitSkip(0);
         emitBackup(savedLoc);
         emitRM_Abs("JEQ", 0, savedLoc2, "While: jmp to end");
         emitRestore();
         emitComment("<- while");
+        delete(level);
+        System.err.println("While end: " + level);
     }
 
     @Override
-    public void visit(ReturnExp exp, int offset, boolean isAddr) {
+    public void visit(ReturnExp exp, int offset, boolean isAddr, int level) {
         emitComment("-> return");
-        exp.exp.accept(this, offset, false);
+        exp.exp.accept(this, offset, false, level);
+        emitRM("LD", pc, -1, fp, "return to caller");
         emitComment("<- return");
     }
 
     @Override
-    public void visit(CompoundExp exp, int offset, boolean isAddr) {
+    public void visit(CompoundExp exp, int offset, boolean isAddr, int level) {
         emitComment("-> compound statement");
         VarDecList dec = exp.decs;
         while( dec != null ) {
         if(dec.head != null) {
-            dec.head.accept( this, --offset, false);
+            dec.head.accept( this, --offset, false, level);
         }
             dec = dec.tail;
         } 
         ExpList ex = exp.exps;
         while( ex != null ) {
             if(ex.head != null) {
-            ex.head.accept( this, --offset, false);
+            ex.head.accept( this, --offset, false, level);
             }
             ex = ex.tail;
         } 
@@ -409,56 +427,64 @@ public class CodeGenerator implements AbsynVisitor {
     }
 
     @Override
-    public void visit(NameTy exp, int offset, boolean isAddr) {
+    public void visit(NameTy exp, int offset, boolean isAddr, int level) {
         // TODO Auto-generated method stub
         
     }
 
     @Override
-    public void visit(FunctionDec exp, int offset, boolean isAddr) {
+    public void visit(FunctionDec exp, int offset, boolean isAddr, int level) {
         offset = 0;
-        NodeType entry = new NodeType(exp.func, emitLoc, 1);
+        level++;
+        System.err.println("FFunction: " + level);
+        emitLoc = emitLoc + 1;
+        System.err.println("FFunction: " + emitLoc);
+        NodeType entry = new NodeType(exp.func, emitLoc, 1, 0);
         if (table.get(exp.func) == null) {
             table.put(exp.func, new ArrayList<NodeType>());
         } 
         table.get(exp.func).add(entry);
+        emitLoc--;
         int x = getAddress(exp.func);
-        System.err.println(exp.func + ": address: " + x);
+       // System.err.println(exp.func + ": address: " + x);
         emitComment("Processing function: " + exp.func);
         emitComment("jump around function body here");
         int savedLoc = emitSkip(1);
         if (exp.func.equals("main"))
             mainEntry = emitLoc;
         emitRM("ST", 0, --offset, fp, "store return");
-        exp.result.accept(this, offset, false);
+        exp.result.accept(this, offset, false, level);
         VarDecList ex = exp.params;
         while( ex != null ) {
           //ex.head.accept( this, --offset, false);
           if (ex.head instanceof SimpleDec){
-            visit((SimpleDec)ex.head, --offset, true);
+            visit((SimpleDec)ex.head, --offset, true, level);
           } else if (ex.head instanceof ArrayDec) {
-            visit((ArrayDec)ex.head, --offset, true);
+            visit((ArrayDec)ex.head, --offset, true, level);
           }
          
           ex = ex.tail;
         } 
         //System.err.println(offset);
-        exp.body.accept(this, offset, false);
+        exp.body.accept(this, offset, false, level);
         emitRM("LD", pc, -1, fp, "return to caller");
         int savedLoc2 = emitSkip(0);
         emitBackup(savedLoc);
         emitRM_Abs("LDA", pc, savedLoc2, "Jump around function body");
         emitRestore();
+        delete(level);
+        removeFuncVars(table.entrySet().iterator());
         emitComment("<- fundecl");
+        System.err.println("function end: " + level);
     }
 
     @Override
-    public void visit(SimpleDec exp, int offset, boolean isParameter) {
+    public void visit(SimpleDec exp, int offset, boolean isParameter, int level) {
 
         if (isParameter == true) {
-            System.err.println(exp.name + " isparameter");
+            //System.err.println(exp.name + " isparameter");
              //System.err.println("here" + offset);
-            NodeType entry = new NodeType(exp.name, offset, 1);
+            NodeType entry = new NodeType(exp.name, offset, 1, level);
             if (table.get(exp.name) == null) {
                 table.put(exp.name, new ArrayList<NodeType>());
             } 
@@ -466,32 +492,32 @@ public class CodeGenerator implements AbsynVisitor {
         } else {
 
                 //System.err.println("here" + offset);
-            NodeType entry = new NodeType(exp.name, offset, 1);
+            NodeType entry = new NodeType(exp.name, offset, 1, level);
             if (table.get(exp.name) == null) {
                 table.put(exp.name, new ArrayList<NodeType>());
             } 
             table.get(exp.name).add(entry);
             //System.err.println(table);
             emitComment("processing local var: " + exp.name);
-            exp.typ.accept( this, offset, false);
+            exp.typ.accept( this, offset, false, level);
 
         }
 
     }
 
     @Override
-    public void visit(ArrayDec exp, int offset, boolean isParameter) {
+    public void visit(ArrayDec exp, int offset, boolean isParameter, int level) {
 
         if (isParameter == true) {
-            System.err.println(exp.name + " isparameter");
-            NodeType entry = new NodeType(exp.name, offset, 1);
+            //System.err.println(exp.name + " isparameter");
+            NodeType entry = new NodeType(exp.name, offset, 1, level);
             if (table.get(exp.name) == null) {
                 table.put(exp.name, new ArrayList<NodeType>());
             } 
             table.get(exp.name).add(entry);
         } else {
 
-            NodeType entry = new NodeType(exp.name, offset, 1);
+            NodeType entry = new NodeType(exp.name, offset, 1, level);
             if (table.get(exp.name) == null) {
                 table.put(exp.name, new ArrayList<NodeType>());
             } 
@@ -503,15 +529,15 @@ public class CodeGenerator implements AbsynVisitor {
 
         if (exp.size != null) {
         } 
-        exp.typ.accept( this, offset, false);
+        exp.typ.accept( this, offset, false, level);
     
     }
 
     @Override
-    public void visit(VarDecList exp, int offset, boolean isAddr) {
+    public void visit(VarDecList exp, int offset, boolean isAddr, int level) {
         while( exp != null ) {
             if (exp.head != null) {
-              exp.head.accept( this, offset, false);
+              exp.head.accept( this, offset, false, level);
               exp = exp.tail;
             }
         } 
@@ -524,9 +550,27 @@ public class CodeGenerator implements AbsynVisitor {
                 if (node.get(j).name.equals(name))
                     addy = node.get(j).address;
             }
-          }
+        }
         return addy;
     }
+
+    public void removeFuncVars(Iterator it) {
+        while (it.hasNext()) {
+          Entry<String, ArrayList<NodeType>> e = (Entry<String, ArrayList<NodeType>>) it.next();
+          if(e.getValue().isEmpty()) {
+            it.remove();
+          } 
+        } 
+      }
+      
+      public void delete(int level) {
+        for(ArrayList<NodeType> node : table.values()) {
+          for(int j=node.size()-1;j>=0;j--) {
+              if (node.get(j).level == level)
+                  node.remove(j);
+          }
+        }
+      }
 
     public static void emitRM(String op, int r, int d, int s, String msg) {
         System.out.println(emitLoc + ": " + op + " " + r + ", " + d + "(" + s + ") \t" + msg );

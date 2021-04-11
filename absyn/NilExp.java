@@ -7,8 +7,8 @@ public class NilExp extends Exp {
     }
 
     @Override
-    public void accept(AbsynVisitor visitor, int level, boolean isAddr) {
-        visitor.visit( this, level, false );
+    public void accept(AbsynVisitor visitor, int level, boolean isAddr, int scope) {
+        visitor.visit( this, level, false, scope );
 
     }
     
