@@ -133,10 +133,13 @@ var_dec       ::= type_specifier:t ID:i SEMI
                 | type_specifier:t ID:i LBRACK NUM:n RBRACK SEMI
                  {:RESULT = new ArrayDec(tleft, t, i, new IntExp(nleft, nright, n), 0); :}
                 | error:e ID:i SEMI
-                  {: parser.report_error("Invalid syntax in variable declaration", e);
+                  {: parser.report_error("Invalid syntax in variable type declaration", e);
                    RESULT = null; :}  
                 | type_specifier:t error:e SEMI
-                  {: parser.report_error("Invalid syntax in variable declaration", e);
+                  {: parser.report_error("Invalid syntax in variable name declaration", e);
+                   RESULT = null; :}
+                | type_specifier:t ID:i error:e
+                  {: parser.report_error("Invalid syntax in variable declaration missing ;", e);
                    RESULT = null; :}
                 ;
 
@@ -216,6 +219,9 @@ stmt           ::= exp:e SEMI
                    {: RESULT = i; :}
                  | return_stmt:r 
                    {: RESULT = r; :}
+                 | error:t
+                  {: parser.report_error("Invalid syntax in statement", t);
+                   RESULT = null; :}
                  ;
 
 selection_stmt ::= IF:i LPAREN exp:e RPAREN stmt:s

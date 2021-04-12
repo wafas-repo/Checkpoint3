@@ -21,6 +21,7 @@ class CM {
   public static final String EXT_ABS_STRING = ".abs";
   public static final String EXT_SYM_STRING = ".sym";
   public static final String EXT_TM_STRING = ".tm";
+  public static boolean SEMANTIC_ERROR = false;
 
   static public void main(String argv[]) {    
     /* Start the parser */
@@ -61,9 +62,15 @@ class CM {
         System.setOut(o);  
         SemanticAnalyzer analyzer = new SemanticAnalyzer();
         result.accept(analyzer, 0, false, 0);
+        if(analyzer.SEMANTIC_ERROR == true) SEMANTIC_ERROR = true;
       }
 
-      if (CODE_GEN) {
+      if(SEMANTIC_ERROR == true) {
+        System.out.println("\n\nErrors are present in " + argv[0] + ", cannot compile");
+        System.exit(0);
+      }
+
+      if ((CODE_GEN == true) && (SEMANTIC_ERROR != true)) {
         String output_file = file + EXT_TM_STRING;
         PrintStream o = new PrintStream(new File(output_file));
         PrintStream console = System.out;

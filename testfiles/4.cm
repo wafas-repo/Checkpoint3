@@ -1,43 +1,46 @@
-/* A program to compute the f42484894u29
- factorial value of an input */
-/* The errors contained in this test file are
-   - mismatch between int and void in operations
-   - no return value from int function
-   - using a void test value in if statement 
-*/
+/* A program that acts like a calculator
+   takes 2 numbers (First and Second IN) and a decision of whether
+   to add, subtract or divide (3rd IN instruction input can only range from 1 -4)
+   3rd IN :
+   1. add
+   2. subtract
+   3. multiply
+   4. divide 
+   No negative input for number and division does not handle divide-by-zero and floats muct be even.  */
 
-int input(void) {
-	int usrInput;
-}
+   int add(int a, int b) {
+       return a + b;
+   }
 
-int output(int value) {
-	value = value;
-}
+   int subtract(int a, int b) {
+       return a - b;  
+   }
 
-int funtwo(void) {
-  int x;
-  x = 2;
-  return;
-}
+   int multiple(int a, int b) {
+       return a * b;   
+   }
 
-void foo(void) {
+   int divide(int a, int b) {
+       return a / b;    
+   }
 
-}
+   void main(void) {
+       int num1; int num2; int operation;
+       num1 = input();
+       num2 = input();
+       operation = input();
 
-void main(void) {
-  int x; void fac; /* hello */
-  x = input();
-  fac = 1;
+       if (operation == 1) {
+           output(add(num1, num2));
+       }
+       if (operation == 2) {
+           output(subtract(num1, num2));
+       }
+       if (operation == 3) {
+           output(multiple(num1, num2));
+       }
+       if (operation == 4) {
+           output(divide(num1, num2));
+       }
 
-  if (foo()) {
-    output(x);
-  }
-
-  while (x > 1) {
-    fac = fac * x;
-    x = x - 1;
-  } 
-
-  output(fac);
-}
-
+   }

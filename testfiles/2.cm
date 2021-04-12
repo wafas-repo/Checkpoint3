@@ -1,34 +1,21 @@
-/* A program to perform Euclid's 
-   algorithm to compute a gcd */
-/* The errors contained in this test file are
-   - declaring y twice within main function
-   - using z without declaring
-   - void function foo returns int 
-*/
 
-int input(void) {
-	int usrInput;
-}
+/* A program that displays the Fibonacci sequence 
+    of first n numbers (entered by the user)  */
 
-int output(int value) {
-	value = value;
-}
+void main(void)
+{
+    int i; int n; int t1; int t2; int nextTerm;
+    i = 1;
+    t1 = 0;
+    t2 = 1;
+    n = input();
 
-void foo(void) {
-  int x;
-  return x;
-}
-
-int gcd(int u, int v) {
-  if (v == 0) return u;
-  else return gcd(v, u - u/v*v);
-}
-
-void main(void) {
-  int x; int y;
-  int y;
-  x = input();
-  y = input();
-  z = input();
-  output(gcd(x, y));
+    while(i<=n)
+    {
+        output(t1);
+        nextTerm = t1 + t2;
+        t1 = t2;
+        t2 = nextTerm;
+        i = i + 1;
+    }
 }

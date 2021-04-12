@@ -16,6 +16,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
   private static String currFunc = "";
   public static int x;
   ArrayList<String> temp = new ArrayList<String>();
+  public static boolean SEMANTIC_ERROR = false;
   public SemanticAnalyzer() {
 
     table = new HashMap<String, ArrayList<NodeType>>();
@@ -88,6 +89,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
     if (exp.rhs instanceof CallExp) {
       var = ((CallExp) exp.rhs).func;
       if (!isInt(var)){
+        SEMANTIC_ERROR = true;
         System.err.printf("line %d: error: illegal use of function call must be int.\n", exp.rhs.pos+1);
       }
 
@@ -101,12 +103,16 @@ public class SemanticAnalyzer implements AbsynVisitor {
     String var = "";
     if (exp.left instanceof CallExp) {
       var = ((CallExp) exp.left).func;
-      if (!isInt(var)) 
+      if (!isInt(var)) {
+        SEMANTIC_ERROR = true;
         System.err.printf("line %d: error: illegal use of function call must be int.\n", exp.left.pos+1);
+      }
     } else if (exp.right instanceof CallExp) {
       var = ((CallExp) exp.right).func;
-      if (!isInt(var))
+      if (!isInt(var)){
+        SEMANTIC_ERROR = true;
         System.err.printf("line %d: error: illegal use of function call must be int.\n", exp.right.pos+1);
+      }
     }
   }
 
@@ -120,9 +126,12 @@ public class SemanticAnalyzer implements AbsynVisitor {
   public void visit(SimpleVar exp, int level, boolean isAddr, int offset) {
     
     if (findSymbol(exp.name)) {
-      if (!isInt(exp.name))
+      if (!isInt(exp.name)) {
+        SEMANTIC_ERROR = true;
         System.err.printf("line %d: error: invalid data type. Variable must be int -> %s\n", exp.pos+1, exp.name);
+      }
     } else {
+      SEMANTIC_ERROR = true;
       System.err.printf("line %d: error: cannot find symbol %s\n", exp.pos+1, exp.name);
     }
 
@@ -134,12 +143,14 @@ public class SemanticAnalyzer implements AbsynVisitor {
    
     if (exp.exp instanceof NilExp) {
       if (isInt(currFunc)) {
+        SEMANTIC_ERROR = true;
         System.err.printf("line %d: error: incompatible types: missing return value\n", exp.pos+1);
       }
     } else {
       exp.exp.accept(this, level, false, offset);
       if (!isInt(currFunc)) {
         if (!(exp.exp instanceof NilExp)) {
+          SEMANTIC_ERROR = true;
           System.err.printf("line %d: error: incompatible types: unexpected return value\n", exp.pos+1);
         }
       }
@@ -155,9 +166,11 @@ public class SemanticAnalyzer implements AbsynVisitor {
     else if (((VarExp) exp.index).variable instanceof IndexVar) var = ((IndexVar) ((VarExp) exp.index).variable).name;
     if (findSymbol(var)){
       if (!isInt(var)) {
+        SEMANTIC_ERROR = true;
         System.err.printf("line %d: error: invalid data type. index must be int\n", exp.pos+1);
       }  
     } else {
+      SEMANTIC_ERROR = true;
       System.err.printf("line %d: error: cannot find symbol %s\n", exp.pos+1, exp.name);
     }
   }
@@ -171,6 +184,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
     } 
 
     if (!findSymbol(exp.func)) {
+      SEMANTIC_ERROR = true;
       System.err.printf("line %d: error: function %s is undeclared\n", exp.pos+1, exp.func); 
     } 
     
@@ -191,8 +205,10 @@ public class SemanticAnalyzer implements AbsynVisitor {
     String var = "";
     if (exp.test instanceof CallExp) {
       var = ((CallExp) exp.test).func;
-      if (!isInt(var)) 
+      if (!isInt(var)) {
+        SEMANTIC_ERROR = true;
         System.err.printf("line %d: error: Test expression %s is not an integer.\n", exp.pos+1, var);
+      }
     }
   }
   
@@ -223,6 +239,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
       else if (((VarExp) exp.test).variable instanceof SimpleVar) var = ((SimpleVar) ((VarExp) exp.test).variable).name;
       else if (((VarExp) exp.test).variable instanceof IndexVar) var = ((IndexVar) ((VarExp) exp.test).variable).name;
           if (!isInt(var)){
+            SEMANTIC_ERROR = true;
             System.err.printf("line %d: error: Test variable must be int.\n", exp.pos+1);
           }
     }
@@ -261,6 +278,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
         
       currFunc = "";
     } else {
+      SEMANTIC_ERROR = true;
       System.err.printf("line %d: error: function %s is already defined within scope.\n", exp.pos+1, exp.func);
     }
   }
@@ -272,6 +290,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
     err = insert(exp.name, level, exp.typ);
     tempParams += exp.typ.typ + " ";
     if (err == false) {
+      SEMANTIC_ERROR = true;
       System.err.printf("line %d: error: variable %s is already defined within scope.\n", exp.pos+1, exp.name);
     }
 
@@ -298,6 +317,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
     if (!varExistsInCurrentScope(exp.name, level)){
       table.get(name).add(entry);
     } else {
+      SEMANTIC_ERROR = true;
       System.err.printf("line %d: error: variable %s is already defined within scope.\n", exp.pos+1, exp.name);
     }
    

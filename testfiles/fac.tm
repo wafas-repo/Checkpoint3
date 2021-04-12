@@ -27,7 +27,8 @@
 * looking up id: x
 13: LDA 0, -2(5) 	load id address
 * <- id
-14: ST 0, -4(5) 	op: push left AssignExp
+* <- id
+14: ST 0, -4(5) 	op: push left
 * -> call of function: input
 15: ST 5, -6(5) 	push ofp
 16: LDA 5, -6(5) 	Push frame
@@ -43,7 +44,8 @@
 * looking up id: fac
 22: LDA 0, -3(5) 	load id address
 * <- id
-23: ST 0, -5(5) 	op: push left AssignExp
+* <- id
+23: ST 0, -5(5) 	op: push left
 * -> constant
 24: LDC 0, 1(0) 	load const
 * <- constant
@@ -56,13 +58,14 @@
 * -> id
 * looking up id: x
 27: LD 0, -2(5) 	load id value
-28: ST 0, -6(5) 	op: push left OP2
+* <- id
+28: ST 0, -6(5) 	op: push left
 * -> constant
 29: LDC 0, 1(0) 	load const
 * <- constant
 30: LD 1, -6(5) 	op: load left
 31: SUB 0, 1, 0 op >
-32: JGT 0, 2(7) 	
+32: JGT 0, 2(7) 	br if true
 33: LDC 0, 0(0) 	false case
 34: LDA 7, 1(7) 	unconditional jump
 35: LDC 0, 1(0) 	true case
@@ -73,15 +76,18 @@
 * looking up id: fac
 37: LDA 0, -3(5) 	load id address
 * <- id
-38: ST 0, -7(5) 	op: push left AssignExp
+* <- id
+38: ST 0, -7(5) 	op: push left
 * -> op
 * -> id
 * looking up id: fac
 39: LD 0, -3(5) 	load id value
-40: ST 0, -9(5) 	op: push left OP2
+* <- id
+40: ST 0, -9(5) 	op: push left
 * -> id
 * looking up id: x
 41: LD 0, -2(5) 	load id value
+* <- id
 42: LD 1, -9(5) 	op: load left
 43: MUL 0, 1, 0 op *
 * <- op
@@ -93,12 +99,14 @@
 * looking up id: x
 46: LDA 0, -2(5) 	load id address
 * <- id
-47: ST 0, -8(5) 	op: push left AssignExp
+* <- id
+47: ST 0, -8(5) 	op: push left
 * -> op
 * -> id
 * looking up id: x
 48: LD 0, -2(5) 	load id value
-49: ST 0, -10(5) 	op: push left OP2
+* <- id
+49: ST 0, -10(5) 	op: push left
 * -> constant
 50: LDC 0, 1(0) 	load const
 * <- constant
@@ -116,7 +124,8 @@
 * -> id
 * looking up id: fac
 56: LD 0, -3(5) 	load id value
-57: ST 0, -9(5) 	op: push left INT
+* <- id
+57: ST 0, -9(5) 	op: push left
 58: ST 5, -7(5) 	push ofp
 59: LDA 5, -7(5) 	Push frame
 60: LDA 0, 1(7) 	Load ac with ret ptr
