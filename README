@@ -1,13 +1,9 @@
-Wafa Qazi / Aqsa Pehlvi
-CIS*4650
-Checkpoint 3
+Wafa Qazi 
 April 11, 2021
 
 ===================
 PROGRAM DESCRIPTION
 ===================
-
-For CheckpointThree, the following was implemented: 
       • Code Generation for C- programs.
 
 
@@ -62,22 +58,12 @@ Testing
   Make sure if you are generating assembly code you add the -s along with -a
   to make sure code gennerated contains no semantic errors.
 
-===========================
-ASSUMPTIONS AND LIMITATIONS
-===========================
-
- 1. Assume testing will be with errors of scope relaated to assignment
- 2. This program will work with any files of C- spec
- 3. We have follwed the reccomended examples of declaration and type-checking errors and have done 
-    recovery for all provided. Only limitation is the number of parameters in a function. Our program
-    doesnt recognize mismatch between function dec and call.
- 4. The code does not generate properly for array variable and parameters. 
 
 ====================
 FURTHER IMPROVEMENTS
 ====================
 
-1. We could improve on our code structure and handle the symbol table more efficiently 
+1. could improve on our code structure and handle the symbol table more efficiently 
 2. More in depth type checking could be done for the funtion parameters 
 3. Add code optimization for cleaner more efficient assembly code
 
